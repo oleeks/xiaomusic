@@ -6,8 +6,6 @@ from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.gzip import GZipMiddleware
 
 from xiaomusic import __version__
 from xiaomusic.api.dependencies import (
@@ -17,6 +15,8 @@ from xiaomusic.api.dependencies import (
     current_xiaomusic,
     current_logger,
 )
+from xiaomusic.api.middleware import add_middleware
+from xiaomusic.api.routers import register_routers
 
 if TYPE_CHECKING:
     from xiaomusic.xiaomusic import XiaoMusic
@@ -65,18 +65,6 @@ app = FastAPI(
     openapi_url=None,
 )
 
-# 添加 CORS 中间件
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # 允许访问的源
-    allow_credentials=False,  # 支持 cookie
-    allow_methods=["*"],  # 允许使用的请求方法
-    allow_headers=["*"],  # 允许携带的 Headers
-)
-
-# 添加 GZip 中间件
-app.add_middleware(GZipMiddleware, minimum_size=500)
-
 
 def http_init(_xiaomusic: "XiaoMusic"):
     """初始化 HTTP 服务器
@@ -90,11 +78,9 @@ def http_init(_xiaomusic: "XiaoMusic"):
     folder = os.path.dirname(os.path.dirname(__file__))  # xiaomusic 目录
     # 初始化应用状态
     app.mount("/static", AuthStaticFiles(directory=f"{folder}/static"), name="static")
-
+    # 增加中间件
+    add_middleware(app)
     # 注册所有路由
-    from xiaomusic.api.routers import register_routers
-
     register_routers(app)
-
     # 重置 HTTP 服务器配置
     reset_http_server(app)
