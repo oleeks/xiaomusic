@@ -33,8 +33,8 @@ class ConfigManager:
         从配置文件中读取设置并更新当前配置。
         如果文件不存在或格式错误，会记录日志但不会抛出异常。
         """
+        filename = self.config.get_setting_file()
         try:
-            filename = self.config.getsettingfile()
             with open(filename, encoding="utf-8") as f:
                 data = json.loads(f.read())
                 return data
@@ -56,7 +56,7 @@ class ConfigManager:
         Args:
             data: 要保存的配置数据（字典格式）
         """
-        filename = self.config.getsettingfile()
+        filename = self.config.get_setting_file()
         with open(filename, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
         self.log.info(f"Configuration saved to {filename}")
@@ -116,4 +116,4 @@ class ConfigManager:
         Returns:
             str: 配置文件的完整路径
         """
-        return self.config.getsettingfile()
+        return self.config.get_setting_file()

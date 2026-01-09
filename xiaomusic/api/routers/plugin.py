@@ -13,24 +13,21 @@ from fastapi import (
     UploadFile,
 )
 
-from xiaomusic.api.dependencies import (
-    verification,
-    xiaomusic,
-)
+from xiaomusic.api.dependencies import require_auth, current_xiaomusic, current_js_plugin_manager
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_auth)])
 
 
 @router.get("/api/js-plugins")
 def get_js_plugins(
-    enabled_only: bool = Query(False, description="是否只返回启用的插件"),
-    Verifcation=Depends(verification),
+        enabled_only: bool = Query(False, description="是否只返回启用的插件"),
+        xiaomusic=Depends(current_xiaomusic)
 ):
     """获取插件列表"""
     try:
         if (
-            not hasattr(xiaomusic, "js_plugin_manager")
-            or not xiaomusic.js_plugin_manager
+                not hasattr(xiaomusic, "js_plugin_manager")
+                or not xiaomusic.js_plugin_manager
         ):
             return {"success": False, "error": "JS Plugin Manager not available"}
 
@@ -45,12 +42,13 @@ def get_js_plugins(
 
 
 @router.put("/api/js-plugins/{plugin_name}/enable")
-def enable_js_plugin(plugin_name: str, Verifcation=Depends(verification)):
+def enable_js_plugin(plugin_name: str,
+                     xiaomusic=Depends(current_xiaomusic)):
     """启用插件"""
     try:
         if (
-            not hasattr(xiaomusic, "js_plugin_manager")
-            or not xiaomusic.js_plugin_manager
+                not hasattr(xiaomusic, "js_plugin_manager")
+                or not xiaomusic.js_plugin_manager
         ):
             return {"success": False, "error": "JS Plugin Manager not available"}
 
@@ -62,12 +60,13 @@ def enable_js_plugin(plugin_name: str, Verifcation=Depends(verification)):
 
 
 @router.put("/api/js-plugins/{plugin_name}/disable")
-def disable_js_plugin(plugin_name: str, Verifcation=Depends(verification)):
+def disable_js_plugin(plugin_name: str,
+                      xiaomusic=Depends(current_xiaomusic)):
     """禁用插件"""
     try:
         if (
-            not hasattr(xiaomusic, "js_plugin_manager")
-            or not xiaomusic.js_plugin_manager
+                not hasattr(xiaomusic, "js_plugin_manager")
+                or not xiaomusic.js_plugin_manager
         ):
             return {"success": False, "error": "JS Plugin Manager not available"}
 
@@ -79,12 +78,13 @@ def disable_js_plugin(plugin_name: str, Verifcation=Depends(verification)):
 
 
 @router.delete("/api/js-plugins/{plugin_name}/uninstall")
-def uninstall_js_plugin(plugin_name: str, Verifcation=Depends(verification)):
+def uninstall_js_plugin(plugin_name: str,
+                        xiaomusic=Depends(current_xiaomusic)):
     """卸载插件"""
     try:
         if (
-            not hasattr(xiaomusic, "js_plugin_manager")
-            or not xiaomusic.js_plugin_manager
+                not hasattr(xiaomusic, "js_plugin_manager")
+                or not xiaomusic.js_plugin_manager
         ):
             return {"success": False, "error": "JS Plugin Manager not available"}
 
@@ -97,8 +97,8 @@ def uninstall_js_plugin(plugin_name: str, Verifcation=Depends(verification)):
 
 @router.post("/api/js-plugins/upload")
 async def upload_js_plugin(
-    file: UploadFile = File(...), verification_dep=Depends(verification)
-):
+        file: UploadFile = File(...),
+        js_plugin_manager=Depends(current_js_plugin_manager)):
     """上传 JS 插件"""
     try:
         # 验证文件扩展名
@@ -106,15 +106,7 @@ async def upload_js_plugin(
             raise HTTPException(status_code=400, detail="只允许上传 .js 文件")
 
         # 使用 JSPluginManager 中定义的插件目录
-        if (
-            not hasattr(xiaomusic, "js_plugin_manager")
-            or not xiaomusic.js_plugin_manager
-        ):
-            raise HTTPException(
-                status_code=500, detail="JS Plugin Manager not available"
-            )
-
-        plugin_dir = xiaomusic.js_plugin_manager.plugins_dir
+        plugin_dir = js_plugin_manager.plugins_dir
         os.makedirs(plugin_dir, exist_ok=True)
         file_path = os.path.join(plugin_dir, file.filename)
         # 校验是否已存在同名js插件 存在则提示，停止上传
@@ -131,10 +123,9 @@ async def upload_js_plugin(
 
         # 更新插件配置文件
         plugin_name = os.path.splitext(file.filename)[0]
-        xiaomusic.js_plugin_manager.update_plugin_config(plugin_name, file.filename)
-
+        js_plugin_manager.update_plugin_config(plugin_name, file.filename)
         # 重新加载插件
-        xiaomusic.js_plugin_manager.reload_plugins()
+        js_plugin_manager.reload_plugins()
 
         return {"success": True, "message": "插件上传成功"}
 
@@ -143,32 +134,33 @@ async def upload_js_plugin(
 
 
 @router.get("/api/openapi/load")
-def get_openapi_info(Verifcation=Depends(verification)):
+def get_openapi_info(js_plugin_manager=Depends(current_js_plugin_manager)):
     """获取开放接口配置信息"""
     try:
-        openapi_info = xiaomusic.js_plugin_manager.get_openapi_info()
+        openapi_info = js_plugin_manager.get_openapi_info()
         return {"success": True, "data": openapi_info}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
 
 @router.post("/api/openapi/toggle")
-def toggle_openapi(Verifcation=Depends(verification)):
+def toggle_openapi(js_plugin_manager=Depends(current_js_plugin_manager)):
     """开放接口状态切换"""
     try:
-        return xiaomusic.js_plugin_manager.toggle_openapi()
+        return js_plugin_manager.toggle_openapi()
     except Exception as e:
         return {"success": False, "error": str(e)}
 
 
 @router.post("/api/openapi/updateUrl")
-async def update_openapi_url(request: Request, Verifcation=Depends(verification)):
+async def update_openapi_url(request: Request,
+                             js_plugin_manager=Depends(current_js_plugin_manager)):
     """更新开放接口地址"""
     try:
         request_json = await request.json()
         search_url = request_json.get("search_url")
         if not request_json or "search_url" not in request_json:
             return {"success": False, "error": "Missing 'search_url' in request body"}
-        return xiaomusic.js_plugin_manager.update_openapi_url(search_url)
+        return js_plugin_manager.update_openapi_url(search_url)
     except Exception as e:
         return {"success": False, "error": str(e)}

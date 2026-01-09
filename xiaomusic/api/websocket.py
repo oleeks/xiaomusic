@@ -2,42 +2,44 @@
 
 import asyncio
 import json
-import secrets
+import logging
 import time
+from typing import TYPE_CHECKING
 
 import jwt
-from fastapi import (
-    APIRouter,
-    Depends,
-    WebSocket,
-    WebSocketDisconnect,
-)
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 
 from xiaomusic.api.dependencies import (
+    current_config,
     verification,
-    xiaomusic,
+    ws_secret, current_xiaomusic, current_logger,
 )
+
+if TYPE_CHECKING:
+    from xiaomusic.config import Config
+    from xiaomusic.xiaomusic import XiaoMusic
 
 router = APIRouter()
 
 # JWT 配置
-JWT_SECRET = secrets.token_urlsafe(32)
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_SECONDS = 60 * 5  # 5 分钟有效期（足够前端连接和重连）
 
 
 @router.get("/generate_ws_token")
 def generate_ws_token(
-    did: str,
-    _: bool = Depends(verification),  # 复用 HTTP Basic 验证
+        did: str,
+        _: bool = Depends(verification),  # 复用 HTTP Basic 验证
+        cfg=Depends(current_config),
 ):
+    secret = ws_secret(cfg)
     payload = {
         "did": did,
         "exp": time.time() + JWT_EXPIRE_SECONDS,
         "iat": time.time(),
     }
 
-    token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    token = jwt.encode(payload, secret, algorithm=JWT_ALGORITHM)
 
     return {
         "token": token,
@@ -46,8 +48,13 @@ def generate_ws_token(
 
 
 @router.websocket("/ws/playingmusic")
-async def ws_playingmusic(websocket: WebSocket):
+async def ws_playingmusic(websocket: WebSocket,
+                          cfg: "Config" = Depends(current_config),
+                          xm: "XiaoMusic" = Depends(current_xiaomusic),
+                          logger: logging.Logger = Depends(current_logger)
+                          ):
     """WebSocket 播放状态推送"""
+    secret = ws_secret(cfg)
     token = websocket.query_params.get("token")
     if not token:
         await websocket.close(code=1008, reason="Missing token")
@@ -55,14 +62,14 @@ async def ws_playingmusic(websocket: WebSocket):
 
     try:
         # 解码 JWT（自动校验签名 + 是否过期）
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(token, secret, algorithms=[JWT_ALGORITHM])
         did = payload.get("did")
 
         if not did:
             await websocket.close(code=1008, reason="Invalid token")
             return
 
-        if not xiaomusic.did_exist(did):
+        if not xm.did_exist(did):
             await websocket.close(code=1003, reason="Did not exist")
             return
 
@@ -70,10 +77,10 @@ async def ws_playingmusic(websocket: WebSocket):
 
         # 开始推送状态
         while True:
-            is_playing = xiaomusic.isplaying(did)
-            cur_music = xiaomusic.playingmusic(did)
-            cur_playlist = xiaomusic.get_cur_play_list(did)
-            offset, duration = xiaomusic.get_offset_duration(did)
+            is_playing = xm.isplaying(did)
+            cur_music = xm.playingmusic(did)
+            cur_playlist = xm.get_cur_play_list(did)
+            offset, duration = xm.get_offset_duration(did)
 
             await websocket.send_text(
                 json.dumps(
@@ -94,7 +101,9 @@ async def ws_playingmusic(websocket: WebSocket):
     except jwt.InvalidTokenError:
         await websocket.close(code=1008, reason="Invalid token")
     except WebSocketDisconnect:
-        print(f"WebSocket disconnected: {did}")
+        if logger:
+            logger.info(f"WebSocket disconnected")
     except Exception as e:
-        print(f"Error: {e}")
+        if logger:
+            logger.error(f"WebSocket error: {e}")
         await websocket.close()

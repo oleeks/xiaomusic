@@ -38,7 +38,7 @@ ignore_logger("miservice")
 def main():
     from xiaomusic import __version__
     from xiaomusic.api import (
-        HttpInit,
+        http_init,
     )
     from xiaomusic.api import (
         app as HttpApp,
@@ -174,7 +174,7 @@ def main():
     }
 
     try:
-        filename = config.getsettingfile()
+        filename = config.get_setting_file()
         with open(filename, encoding="utf-8") as f:
             data = json.loads(f.read())
             config.update_config(data)
@@ -191,7 +191,7 @@ def main():
     )
 
     xiaomusic = XiaoMusic(config)
-    HttpInit(xiaomusic)
+    http_init(xiaomusic)
     port = int(config.port)
 
     # 创建 uvicorn 配置，禁用其信号处理

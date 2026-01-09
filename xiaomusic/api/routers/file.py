@@ -5,6 +5,7 @@ import base64
 import os
 import shutil
 from urllib.parse import urlparse
+from typing import TYPE_CHECKING
 
 import aiohttp
 from fastapi import (
@@ -26,10 +27,7 @@ from starlette.background import BackgroundTask
 
 from xiaomusic.api.dependencies import (
     access_key_verification,
-    config,
-    log,
-    verification,
-    xiaomusic,
+    require_auth, current_xiaomusic, current_config, current_logger,
 )
 from xiaomusic.api.models import (
     DownloadOneMusic,
@@ -50,11 +48,16 @@ from xiaomusic.utils import (
     try_add_access_control_param,
 )
 
-router = APIRouter()
+if TYPE_CHECKING:
+    from xiaomusic.xiaomusic import XiaoMusic
+    from xiaomusic.config import Config
+
+router = APIRouter(dependencies=[Depends(require_auth)])
 
 
 @router.post("/downloadjson")
-async def downloadjson(data: UrlInfo, Verifcation=Depends(verification)):
+async def downloadjson(data: UrlInfo,
+                       log=Depends(current_logger)):
     """下载 JSON"""
     log.info(data)
     url = data.url
@@ -72,35 +75,36 @@ async def downloadjson(data: UrlInfo, Verifcation=Depends(verification)):
 
 
 @router.post("/downloadplaylist")
-async def downloadplaylist(data: DownloadPlayList, Verifcation=Depends(verification)):
+async def downloadplaylist(data: DownloadPlayList, cfg: "Config" = Depends(current_config),
+                           log=Depends(current_logger)):
     """下载歌单"""
     try:
         bili_fav_list = await check_bili_fav_list(data.url)
-        download_proc_list = []
+        download_proc_list = {}
         if bili_fav_list:
             for bvid, title in bili_fav_list.items():
                 bvurl = f"https://www.bilibili.com/video/{bvid}"
                 download_proc_list[title] = await download_one_music(
-                    config, bvurl, os.path.join(data.dirname, title)
+                    cfg, bvurl, os.path.join(data.dir_name, title)
                 )
             for title, download_proc_sigle in download_proc_list.items():
                 exit_code = await download_proc_sigle.wait()
                 log.info(f"Download completed {title} with exit code {exit_code}")
-            dir_path = safe_join_path(config.download_path, data.dirname)
+            dir_path = safe_join_path(cfg.download_path, data.dir_name)
             log.debug(f"Download dir_path: {dir_path}")
             # 可能只是部分失败，都需要整理下载目录
             remove_common_prefix(dir_path)
             chmoddir(dir_path)
             return {"ret": "OK"}
         else:
-            download_proc = await download_playlist(config, data.url, data.dirname)
+            download_proc = await download_playlist(cfg, data.url, data.dir_name)
 
         async def check_download_proc():
             # 等待子进程完成
             exit_code = await download_proc.wait()
             log.info(f"Download completed with exit code {exit_code}")
 
-            dir_path = safe_join_path(config.download_path, data.dirname)
+            dir_path = safe_join_path(cfg.download_path, data.dir_name)
             log.debug(f"Download dir_path: {dir_path}")
             # 可能只是部分失败，都需要整理下载目录
             remove_common_prefix(dir_path)
@@ -115,16 +119,17 @@ async def downloadplaylist(data: DownloadPlayList, Verifcation=Depends(verificat
 
 
 @router.post("/downloadonemusic")
-async def downloadonemusic(data: DownloadOneMusic, Verifcation=Depends(verification)):
+async def downloadonemusic(data: DownloadOneMusic, cfg: "Config" = Depends(current_config),
+                           log=Depends(current_logger)):
     """下载单首歌曲"""
     try:
-        download_proc = await download_one_music(config, data.url, data.name)
+        download_proc = await download_one_music(cfg, data.url, data.name)
 
         async def check_download_proc():
             # 等待子进程完成
             exit_code = await download_proc.wait()
             log.info(f"Download completed with exit code {exit_code}")
-            chmoddir(config.download_path)
+            chmoddir(cfg.download_path)
 
         asyncio.create_task(check_download_proc())
         return {"ret": "OK"}
@@ -135,34 +140,36 @@ async def downloadonemusic(data: DownloadOneMusic, Verifcation=Depends(verificat
 
 
 @router.post("/uploadytdlpcookie")
-async def upload_yt_dlp_cookie(file: UploadFile = File(...)):
+async def upload_yt_dlp_cookie(file: UploadFile = File(...), cfg: "Config" = Depends(current_config)):
     """上传 yt-dlp cookies"""
-    with open(config.yt_dlp_cookies_path, "wb") as buffer:
+    with open(cfg.yt_dlp_cookies_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     return {
         "ret": "OK",
         "filename": file.filename,
-        "file_location": config.yt_dlp_cookies_path,
+        "file_location": cfg.yt_dlp_cookies_path,
     }
 
 
 @router.post("/uploadmusic")
-async def upload_music(playlist: str = Form(...), file: UploadFile = File(...)):
+async def upload_music(playlist: str = Form(...),
+                       file: UploadFile = File(...), xm: "XiaoMusic" = Depends(current_xiaomusic),
+                       log=Depends(current_logger)):
     """上传音乐文件到当前播放列表对应的目录"""
     try:
         # 选择目标目录：优先尝试由播放列表中已有歌曲推断目录
-        dest_dir = xiaomusic.music_path
+        dest_dir = xm.music_path
         # 特殊歌单映射
         if playlist == "下载":
-            dest_dir = xiaomusic.download_path
+            dest_dir = xm.download_path
         elif playlist == "其他":
-            dest_dir = xiaomusic.music_path
+            dest_dir = xm.music_path
         else:
             # 如果播放列表中存在歌曲，从其中任意一首推断目录
-            musics = xiaomusic.music_list.get(playlist, [])
+            musics = xm.music_list.get(playlist, [])
             if musics and len(musics) > 0:
                 first = musics[0]
-                filepath = xiaomusic.all_music.get(first, "")
+                filepath = xm.all_music.get(first, "")
                 if filepath:
                     dest_dir = os.path.dirname(filepath)
 
@@ -195,7 +202,7 @@ async def upload_music(playlist: str = Form(...), file: UploadFile = File(...)):
 
         # 重新生成音乐列表索引
         try:
-            xiaomusic._gen_all_music_list()
+            xm._gen_all_music_list()
         except Exception:
             pass
 
@@ -207,9 +214,10 @@ async def upload_music(playlist: str = Form(...), file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail="Upload failed") from e
 
 
-def safe_redirect(url):
+def safe_redirect(url, cfg: "Config" = Depends(current_config),
+                  log=Depends(current_logger)):
     """安全重定向"""
-    url = try_add_access_control_param(config, url)
+    url = try_add_access_control_param(cfg, url)
     url = url.replace("\\", "")
     if not urlparse(url).netloc and not urlparse(url).scheme:
         log.debug(f"redirect to {url}")
@@ -218,12 +226,13 @@ def safe_redirect(url):
 
 
 @router.get("/music/{file_path:path}")
-async def music_file(request: Request, file_path: str, key: str = "", code: str = ""):
+async def music_file(file_path: str, key: str = "", code: str = "", cfg: "Config" = Depends(current_config),
+                     log=Depends(current_logger)):
     """音乐文件访问"""
-    if not access_key_verification(f"/music/{file_path}", key, code):
+    if not access_key_verification(f"/music/{file_path}", key, code, cfg, log):
         raise HTTPException(status_code=404, detail="File not found")
 
-    absolute_path = os.path.abspath(config.music_path)
+    absolute_path = os.path.abspath(cfg.music_path)
     absolute_file_path = os.path.normpath(os.path.join(absolute_path, file_path))
     if not absolute_file_path.startswith(absolute_path):
         raise HTTPException(status_code=404, detail="File not found")
@@ -231,9 +240,9 @@ async def music_file(request: Request, file_path: str, key: str = "", code: str 
         raise HTTPException(status_code=404, detail="File not found")
 
     # 移除MP3 ID3 v2标签和填充
-    if config.remove_id3tag and is_mp3(file_path):
-        log.info(f"remove_id3tag:{config.remove_id3tag}, is_mp3:True ")
-        temp_mp3_file = remove_id3_tags(absolute_file_path, config)
+    if cfg.remove_id3tag and is_mp3(file_path):
+        log.info(f"remove_id3tag:{cfg.remove_id3tag}, is_mp3:True ")
+        temp_mp3_file = remove_id3_tags(absolute_file_path, cfg)
         if temp_mp3_file:
             log.info(f"ID3 tag removed {absolute_file_path} to {temp_mp3_file}")
             redirect = safe_redirect(f"/music/{temp_mp3_file}")
@@ -242,8 +251,8 @@ async def music_file(request: Request, file_path: str, key: str = "", code: str 
         else:
             log.info(f"No ID3 tag remove needed: {absolute_file_path}")
 
-    if config.convert_to_mp3 and not is_mp3(file_path):
-        temp_mp3_file = convert_file_to_mp3(absolute_file_path, config)
+    if cfg.convert_to_mp3 and not is_mp3(file_path):
+        temp_mp3_file = convert_file_to_mp3(absolute_file_path, cfg)
         if temp_mp3_file:
             log.info(f"Converted file: {absolute_file_path} to {temp_mp3_file}")
             redirect = safe_redirect(f"/music/{temp_mp3_file}")
@@ -265,12 +274,14 @@ async def music_options():
 
 
 @router.get("/picture/{file_path:path}")
-async def get_picture(request: Request, file_path: str, key: str = "", code: str = ""):
+async def get_picture(file_path: str, key: str = "", code: str = "",
+                      cfg: "Config" = Depends(current_config),
+                      log=Depends(current_logger)):
     """图片文件访问"""
-    if not access_key_verification(f"/picture/{file_path}", key, code):
+    if not access_key_verification(f"/picture/{file_path}", key, code, cfg, log):
         raise HTTPException(status_code=404, detail="File not found")
 
-    absolute_path = os.path.abspath(config.picture_cache_path)
+    absolute_path = os.path.abspath(cfg.picture_cache_path)
     absolute_file_path = os.path.normpath(os.path.join(absolute_path, file_path))
     if not absolute_file_path.startswith(absolute_path):
         raise HTTPException(status_code=404, detail="File not found")
@@ -281,7 +292,7 @@ async def get_picture(request: Request, file_path: str, key: str = "", code: str
 
 
 @router.get("/proxy", summary="基于正常下载逻辑的代理接口")
-async def proxy(urlb64: str):
+async def proxy(urlb64: str, log=Depends(current_logger)):
     """代理接口"""
     try:
         # 将Base64编码的URL解码为字符串

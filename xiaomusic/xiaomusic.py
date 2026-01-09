@@ -40,6 +40,7 @@ from xiaomusic.utils import (
     downloadfile,
     parse_str_to_dict,
 )
+from xiaomusic.utils.logger_utils import get_logger
 
 
 class XiaoMusic:
@@ -267,39 +268,7 @@ class XiaoMusic:
         self._device_manager.set_devices(self.devices)
 
     def setup_logger(self):
-        log_format = f"%(asctime)s [{__version__}] [%(levelname)s] %(filename)s:%(lineno)d: %(message)s"
-        date_format = "[%Y-%m-%d %H:%M:%S]"
-        formatter = logging.Formatter(fmt=log_format, datefmt=date_format)
-
-        self.log = logging.getLogger("xiaomusic")
-        self.log.handlers.clear()  # 清除已有的 handlers
-        self.log.setLevel(logging.DEBUG if self.config.verbose else logging.INFO)
-
-        # 文件日志处理器
-        log_file = self.config.log_file
-        log_path = os.path.dirname(log_file)
-        if log_path and not os.path.exists(log_path):
-            os.makedirs(log_path)
-        if os.path.exists(log_file):
-            try:
-                os.remove(log_file)
-            except Exception as e:
-                print(f"无法删除旧日志文件: {log_file} {e}")
-
-        file_handler = RotatingFileHandler(
-            self.config.log_file,
-            maxBytes=10 * 1024 * 1024,
-            backupCount=1,
-            encoding="utf-8",
-        )
-        file_handler.stream.flush()
-        file_handler.setFormatter(formatter)
-        self.log.addHandler(file_handler)
-
-        # 控制台日志处理器
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(formatter)
-        self.log.addHandler(console_handler)
+        self.log = get_logger("xiaomusic")
 
     async def poll_latest_ask(self):
         """轮询最新对话记录（委托给 conversation_poller）"""

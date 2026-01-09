@@ -1,60 +1,70 @@
 """播放列表路由"""
 
-from fastapi import (
-    APIRouter,
-    Depends,
-)
+from fastapi import APIRouter, Depends
 
 from xiaomusic.api.dependencies import (
-    log,
-    verification,
-    xiaomusic,
+    device_guard,
+    require_auth,
+    current_xiaomusic,
 )
 from xiaomusic.api.models import (
     DidPlayMusicList,
-    PlayListMusicObj,
-    PlayListObj,
-    PlayListUpdateObj,
+    PlayListMusic,
+    PlayList,
+    PlayListUpdate,
 )
+from xiaomusic.xiaomusic import XiaoMusic
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_auth)])
 
 
 @router.get("/curplaylist")
-async def curplaylist(did: str = "", Verifcation=Depends(verification)):
+async def curplaylist(
+    did: str = "",
+    xm: XiaoMusic = Depends(current_xiaomusic),
+):
     """当前播放列表"""
-    if not xiaomusic.did_exist(did):
+    if not xm.did_exist(did):
         return ""
-    return xiaomusic.get_cur_play_list(did)
+    return xm.get_cur_play_list(did)
 
 
 @router.post("/playmusiclist")
-async def playmusiclist(data: DidPlayMusicList, Verifcation=Depends(verification)):
+async def playmusic_list(
+    data: DidPlayMusicList,
+    xm: XiaoMusic = Depends(current_xiaomusic),
+):
     """播放音乐列表"""
     did = data.did
-    listname = data.listname
-    musicname = data.musicname
-    if not xiaomusic.did_exist(did):
-        return {"ret": "Did not exist"}
+    list_name = data.list_name
+    music_name = data.music_name
+    if error := device_guard(did, xm):
+        return error
 
-    log.info(f"playmusiclist {did} listname:{listname} musicname:{musicname}")
-    await xiaomusic.do_play_music_list(did, listname, musicname)
+    xm.log.info(f"playmusic_list {did} list_name:{list_name} music_name:{music_name}")
+    await xm.do_play_music_list(did, list_name, music_name)
     return {"ret": "OK"}
 
 
 @router.post("/playlistadd")
-async def playlistadd(data: PlayListObj, Verifcation=Depends(verification)):
+async def playlistadd(
+    data: PlayList,
+    xm: XiaoMusic = Depends(current_xiaomusic),
+):
     """新增歌单"""
-    ret = xiaomusic.play_list_add(data.name)
+    ret = xm.play_list_add(data.name)
     if ret:
         return {"ret": "OK"}
     return {"ret": "Add failed, may be already exist."}
 
 
 @router.post("/playlistdel")
-async def playlistdel(data: PlayListObj, Verifcation=Depends(verification)):
+async def playlistdel(
+    data: PlayList,
+    xm: XiaoMusic = Depends(current_xiaomusic),
+):
     """移除歌单"""
-    ret = xiaomusic.play_list_del(data.name)
+    ret = xm.play_list_del(data.name)
     if ret:
         return {"ret": "OK"}
     return {"ret": "Del failed, may be not exist."}
@@ -62,20 +72,23 @@ async def playlistdel(data: PlayListObj, Verifcation=Depends(verification)):
 
 @router.post("/playlistupdatename")
 async def playlistupdatename(
-    data: PlayListUpdateObj, Verifcation=Depends(verification)
+        data: PlayListUpdate,
+        xm: XiaoMusic = Depends(current_xiaomusic),
 ):
     """修改歌单名字"""
-    ret = xiaomusic.play_list_update_name(data.oldname, data.newname)
+    ret = xm.play_list_update_name(data.old_name, data.new_name)
     if ret:
         return {"ret": "OK"}
     return {"ret": "Update failed, may be not exist."}
 
 
 @router.get("/playlistnames")
-async def getplaylistnames(Verifcation=Depends(verification)):
+async def getplaylistnames(
+    xm: XiaoMusic = Depends(current_xiaomusic),
+):
     """获取所有自定义歌单"""
-    names = xiaomusic.get_play_list_names()
-    log.info(f"names {names}")
+    names = xm.get_play_list_names()
+    xm.log.info(f"names {names}")
     return {
         "ret": "OK",
         "names": names,
@@ -83,18 +96,24 @@ async def getplaylistnames(Verifcation=Depends(verification)):
 
 
 @router.post("/playlistaddmusic")
-async def playlistaddmusic(data: PlayListMusicObj, Verifcation=Depends(verification)):
+async def playlistaddmusic(
+    data: PlayListMusic,
+    xm: XiaoMusic = Depends(current_xiaomusic),
+):
     """歌单新增歌曲"""
-    ret = xiaomusic.play_list_add_music(data.name, data.music_list)
+    ret = xm.play_list_add_music(data.name, data.music_list)
     if ret:
         return {"ret": "OK"}
     return {"ret": "Add failed, may be playlist not exist."}
 
 
 @router.post("/playlistdelmusic")
-async def playlistdelmusic(data: PlayListMusicObj, Verifcation=Depends(verification)):
+async def playlistdelmusic(
+    data: PlayListMusic,
+    xm: XiaoMusic = Depends(current_xiaomusic),
+):
     """歌单移除歌曲"""
-    ret = xiaomusic.play_list_del_music(data.name, data.music_list)
+    ret = xm.play_list_del_music(data.name, data.music_list)
     if ret:
         return {"ret": "OK"}
     return {"ret": "Del failed, may be playlist not exist."}
@@ -102,19 +121,23 @@ async def playlistdelmusic(data: PlayListMusicObj, Verifcation=Depends(verificat
 
 @router.post("/playlistupdatemusic")
 async def playlistupdatemusic(
-    data: PlayListMusicObj, Verifcation=Depends(verification)
+        data: PlayListMusic,
+        xm: XiaoMusic = Depends(current_xiaomusic),
 ):
     """歌单更新歌曲"""
-    ret = xiaomusic.play_list_update_music(data.name, data.music_list)
+    ret = xm.play_list_update_music(data.name, data.music_list)
     if ret:
         return {"ret": "OK"}
     return {"ret": "Del failed, may be playlist not exist."}
 
 
 @router.get("/playlistmusics")
-async def getplaylist(name: str, Verifcation=Depends(verification)):
+async def getplaylist(
+    name: str,
+    xm: XiaoMusic = Depends(current_xiaomusic),
+):
     """获取歌单中所有歌曲"""
-    ret, musics = xiaomusic.play_list_musics(name)
+    ret, musics = xm.play_list_musics(name)
     return {
         "ret": "OK",
         "musics": musics,

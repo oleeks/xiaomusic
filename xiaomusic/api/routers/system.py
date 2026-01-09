@@ -8,12 +8,7 @@ from dataclasses import (
     asdict,
 )
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException,
-    Request,
-)
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.openapi.docs import (
     get_redoc_html,
     get_swagger_ui_html,
@@ -28,15 +23,15 @@ from starlette.background import (
     BackgroundTask,
 )
 
-from xiaomusic import (
-    __version__,
-)
+from xiaomusic import __version__
 from xiaomusic.api.dependencies import (
-    config,
-    log,
-    verification,
-    xiaomusic,
+    current_config,
+    current_logger,
+    current_xiaomusic,
+    require_auth,
 )
+from xiaomusic.config import Config
+from xiaomusic.xiaomusic import XiaoMusic
 from xiaomusic.utils import (
     deepcopy_data_no_sensitive_info,
     get_latest_version,
@@ -44,11 +39,11 @@ from xiaomusic.utils import (
     update_version,
 )
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_auth)])
 
 
 @router.get("/")
-async def read_index(Verifcation=Depends(verification)):
+async def read_index():
     """首页"""
     folder = os.path.dirname(
         os.path.dirname(os.path.dirname(__file__))
@@ -57,40 +52,49 @@ async def read_index(Verifcation=Depends(verification)):
 
 
 @router.get("/getversion")
-def getversion(Verifcation=Depends(verification)):
+def getversion(
+    logger=Depends(current_logger),
+):
     """获取版本"""
-    log.debug("getversion %s", __version__)
+    if logger:
+        logger.debug("getversion %s", __version__)
     return {"version": __version__}
 
 
 @router.get("/getsetting")
-async def getsetting(need_device_list: bool = False, Verifcation=Depends(verification)):
+async def getsetting(
+    need_device_list: bool = False,
+    xm: XiaoMusic = Depends(current_xiaomusic),
+):
     """获取设置"""
-    config_data = xiaomusic.getconfig()
+    config_data = xm.getconfig()
     data = asdict(config_data)
     data["password"] = "******"
     data["httpauth_password"] = "******"
     if need_device_list:
-        device_list = await xiaomusic.getalldevices()
-        log.info(f"getsetting device_list: {device_list}")
+        device_list = await xm.getalldevices()
+        xm.log.info(f"getsetting device_list: {device_list}")
         data["device_list"] = device_list
     return data
 
 
 @router.post("/savesetting")
-async def savesetting(request: Request, Verifcation=Depends(verification)):
+async def savesetting(
+    request: Request,
+    xm: XiaoMusic = Depends(current_xiaomusic),
+):
     """保存设置"""
     try:
         data_json = await request.body()
         data = json.loads(data_json.decode("utf-8"))
         debug_data = deepcopy_data_no_sensitive_info(data)
-        log.info(f"saveconfig: {debug_data}")
-        config_obj = xiaomusic.getconfig()
+        xm.log.info(f"saveconfig: {debug_data}")
+        config_obj = xm.getconfig()
         if data["password"] == "******" or data["password"] == "":
             data["password"] = config_obj.password
         if data["httpauth_password"] == "******" or data["httpauth_password"] == "":
             data["httpauth_password"] = config_obj.httpauth_password
-        await xiaomusic.saveconfig(data)
+        await xm.saveconfig(data)
 
         # 重置 HTTP 服务器配置
         from xiaomusic.api.app import app
@@ -104,9 +108,11 @@ async def savesetting(request: Request, Verifcation=Depends(verification)):
 
 
 @router.get("/downloadlog")
-def downloadlog(Verifcation=Depends(verification)):
+def downloadlog(
+    cfg: Config = Depends(current_config),
+):
     """下载日志"""
-    file_path = config.log_file
+    file_path = cfg.log_file
     if os.path.exists(file_path):
         # 创建一个临时文件来保存日志的快照
         temp_file = tempfile.NamedTemporaryFile(delete=False)
@@ -136,7 +142,7 @@ def downloadlog(Verifcation=Depends(verification)):
 
 
 @router.get("/latestversion")
-async def latest_version(Verifcation=Depends(verification)):
+async def latest_version():
     """获取最新版本"""
     version = await get_latest_version("xiaomusic")
     if version:
@@ -147,7 +153,7 @@ async def latest_version(Verifcation=Depends(verification)):
 
 @router.post("/updateversion")
 async def updateversion(
-    version: str = "", lite: bool = True, Verifcation=Depends(verification)
+    version: str = "", lite: bool = True
 ):
     """更新版本"""
     import asyncio
@@ -161,19 +167,19 @@ async def updateversion(
 
 
 @router.get("/docs", include_in_schema=False)
-async def get_swagger_documentation(Verifcation=Depends(verification)):
+async def get_swagger_documentation():
     """Swagger 文档"""
     return get_swagger_ui_html(openapi_url="/openapi.json", title="docs")
 
 
 @router.get("/redoc", include_in_schema=False)
-async def get_redoc_documentation(Verifcation=Depends(verification)):
+async def get_redoc_documentation():
     """ReDoc 文档"""
     return get_redoc_html(openapi_url="/openapi.json", title="docs")
 
 
 @router.get("/openapi.json", include_in_schema=False)
-async def openapi(Verifcation=Depends(verification)):
+async def openapi():
     """OpenAPI 规范"""
     from xiaomusic.api.app import app
 

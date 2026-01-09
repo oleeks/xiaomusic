@@ -119,7 +119,7 @@ class Config:
     ignore_tag_dirs: str = os.getenv("XIAOMUSIC_IGNORE_TAG_DIRS", "")
     music_path_depth: int = int(os.getenv("XIAOMUSIC_MUSIC_PATH_DEPTH", "10"))
     disable_httpauth: bool = (
-        os.getenv("XIAOMUSIC_DISABLE_HTTPAUTH", "true").lower() == "true"
+            os.getenv("XIAOMUSIC_DISABLE_HTTPAUTH", "true").lower() == "true"
     )
     httpauth_username: str = os.getenv("XIAOMUSIC_HTTPAUTH_USERNAME", "")
     httpauth_password: str = os.getenv("XIAOMUSIC_HTTPAUTH_PASSWORD", "")
@@ -127,12 +127,12 @@ class Config:
     music_list_json: str = os.getenv("XIAOMUSIC_MUSIC_LIST_JSON", "")
     custom_play_list_json: str = os.getenv("XIAOMUSIC_CUSTOM_PLAY_LIST_JSON", "")
     disable_download: bool = (
-        os.getenv("XIAOMUSIC_DISABLE_DOWNLOAD", "false").lower() == "true"
+            os.getenv("XIAOMUSIC_DISABLE_DOWNLOAD", "false").lower() == "true"
     )
     key_word_dict: dict[str, str] = field(default_factory=default_key_word_dict)
     key_match_order: list[str] = field(default_factory=default_key_match_order)
     use_music_api: bool = (
-        os.getenv("XIAOMUSIC_USE_MUSIC_API", "false").lower() == "true"
+            os.getenv("XIAOMUSIC_USE_MUSIC_API", "false").lower() == "true"
     )
     use_music_audio_id: str = os.getenv(
         "XIAOMUSIC_USE_MUSIC_AUDIO_ID", "1582971365183456177"
@@ -143,7 +143,7 @@ class Config:
     fuzzy_match_cutoff: float = float(os.getenv("XIAOMUSIC_FUZZY_MATCH_CUTOFF", "0.6"))
     # 开启模糊搜索
     enable_fuzzy_match: bool = (
-        os.getenv("XIAOMUSIC_ENABLE_FUZZY_MATCH", "true").lower() == "true"
+            os.getenv("XIAOMUSIC_ENABLE_FUZZY_MATCH", "true").lower() == "true"
     )
     stop_tts_msg: str = os.getenv("XIAOMUSIC_STOP_TTS_MSG", "收到,再见")
     enable_config_example: bool = False
@@ -165,43 +165,43 @@ class Config:
         default_factory=default_user_key_word_dict
     )
     enable_force_stop: bool = (
-        os.getenv("XIAOMUSIC_ENABLE_FORCE_STOP", "false").lower() == "true"
+            os.getenv("XIAOMUSIC_ENABLE_FORCE_STOP", "false").lower() == "true"
     )
     devices: dict[str, Device] = field(default_factory=dict)
     group_list: str = os.getenv(
         "XIAOMUSIC_GROUP_LIST", ""
     )  # did1:group_name,did2:group_name
     remove_id3tag: bool = (
-        os.getenv("XIAOMUSIC_REMOVE_ID3TAG", "false").lower() == "true"
+            os.getenv("XIAOMUSIC_REMOVE_ID3TAG", "false").lower() == "true"
     )
     convert_to_mp3: bool = os.getenv("CONVERT_TO_MP3", "false").lower() == "true"
     delay_sec: int = int(os.getenv("XIAOMUSIC_DELAY_SEC", 3))  # 下一首歌延迟播放秒数
     continue_play: bool = (
-        os.getenv("XIAOMUSIC_CONTINUE_PLAY", "false").lower() == "true"
+            os.getenv("XIAOMUSIC_CONTINUE_PLAY", "false").lower() == "true"
     )
     # 目录监控配置
     enable_file_watch: bool = (
-        os.getenv("XIAOMUSIC_ENABLE_FILE_WATCH", "false").lower() == "true"
+            os.getenv("XIAOMUSIC_ENABLE_FILE_WATCH", "false").lower() == "true"
     )
     file_watch_debounce: int = int(
         os.getenv("XIAOMUSIC_FILE_WATCH_DEBOUNCE", 10)
     )  # 监控刷新延迟时间(秒)
     pull_ask_sec: int = int(os.getenv("XIAOMUSIC_PULL_ASK_SEC", "1"))
     enable_pull_ask: bool = (
-        os.getenv("XIAOMUSIC_ENABLE_PULL_ASK", "true").lower() == "true"
+            os.getenv("XIAOMUSIC_ENABLE_PULL_ASK", "true").lower() == "true"
     )
     crontab_json: str = os.getenv("XIAOMUSIC_CRONTAB_JSON", "")  # 定时任务
     enable_yt_dlp_cookies: bool = (
-        os.getenv("XIAOMUSIC_ENABLE_YT_DLP_COOKIES", "false").lower() == "true"
+            os.getenv("XIAOMUSIC_ENABLE_YT_DLP_COOKIES", "false").lower() == "true"
     )
     enable_save_tag: bool = (
-        os.getenv("XIAOMUSIC_ENABLE_SAVE_TAG", "false").lower() == "true"
+            os.getenv("XIAOMUSIC_ENABLE_SAVE_TAG", "false").lower() == "true"
     )
     enable_analytics: bool = (
-        os.getenv("XIAOMUSIC_ENABLE_ANALYTICS", "true").lower() == "true"
+            os.getenv("XIAOMUSIC_ENABLE_ANALYTICS", "true").lower() == "true"
     )
     get_ask_by_mina: bool = (
-        os.getenv("XIAOMUSIC_GET_ASK_BY_MINA", "false").lower() == "true"
+            os.getenv("XIAOMUSIC_GET_ASK_BY_MINA", "false").lower() == "true"
     )
     play_type_one_tts_msg: str = os.getenv(
         "XIAOMUSIC_PLAY_TYPE_ONE_TTS_MSG", "已经设置为单曲循环"
@@ -223,13 +223,13 @@ class Config:
     )
     # 开启语音删除歌曲
     enable_cmd_del_music: bool = (
-        os.getenv("XIAOMUSIC_ENABLE_CMD_DEL_MUSIC", "false").lower() == "true"
+            os.getenv("XIAOMUSIC_ENABLE_CMD_DEL_MUSIC", "false").lower() == "true"
     )
     # 搜索歌曲数量
     search_music_count: int = int(os.getenv("XIAOMUSIC_SEARCH_MUSIC_COUNT", "100"))
     # 网络歌曲使用proxy
     web_music_proxy: bool = (
-        os.getenv("XIAOMUSIC_WEB_MUSIC_PROXY", "false").lower() == "true"
+            os.getenv("XIAOMUSIC_WEB_MUSIC_PROXY", "false").lower() == "true"
     )
 
     def append_keyword(self, keys, action):
@@ -324,7 +324,7 @@ class Config:
         self.init_keyword()
 
     # 获取设置文件
-    def getsettingfile(self):
+    def get_setting_file(self):
         # 兼容旧配置空的情况
         if not self.conf_path:
             self.conf_path = "conf"
