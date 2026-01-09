@@ -53,8 +53,8 @@ def current_js_plugin_manager(xiaomusic=Depends(current_xiaomusic)):
 
 
 def verification(
-    credentials: Annotated[HTTPBasicCredentials, Depends(security)],
-    cfg: "Config" = Depends(current_config),
+        credentials: Annotated[HTTPBasicCredentials, Depends(security)],
+        cfg: "Config" = Depends(current_config),
 ):
     """HTTP Basic 认证"""
     current_username_bytes = credentials.username.encode("utf8")
@@ -87,7 +87,7 @@ def no_verification():
 
 
 def access_key_verification(
-    file_path: str, key: str, code: str, cfg: "Config", logger: logging.Logger
+        file_path: str, key: str, code: str, cfg: "Config", logger: logging.Logger
 ) -> bool:
     """访问密钥验证"""
     if cfg.disable_httpauth:
@@ -138,8 +138,8 @@ class AuthStaticFiles(StaticFiles):
 
 def reset_http_server(app):
     """重置 HTTP 服务器配置"""
-    cfg = current_config(app)
-    logger = current_logger(app)
+    cfg = app.state.xiaomusic.config
+    logger = app.state.xiaomusic.log
     if logger:
         logger.info(f"disable_httpauth:{cfg.disable_httpauth}")
     if cfg.disable_httpauth:

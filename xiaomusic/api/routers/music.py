@@ -68,7 +68,7 @@ async def get_real_music_url(
 
 @router.post("/api/play/getMediaSource")
 async def get_media_source(
-        request: Request, xm: XiaoMusic = Depends(current_xiaomusic)
+        request: Request, xm: "XiaoMusic" = Depends(current_xiaomusic)
 ):
     """获取音乐真实播放URL"""
     try:
@@ -82,7 +82,7 @@ async def get_media_source(
 
 @router.post("/api/play/getLyric")
 async def get_media_lyric(
-        request: Request, xm: XiaoMusic = Depends(current_xiaomusic)
+        request: Request, xm: "XiaoMusic" = Depends(current_xiaomusic)
 ):
     """获取音乐歌词"""
     try:
@@ -96,7 +96,7 @@ async def get_media_lyric(
 
 @router.post("/api/play/online")
 async def play_online_music(
-        request: Request, xm: XiaoMusic = Depends(current_xiaomusic)
+        request: Request, xm: "XiaoMusic" = Depends(current_xiaomusic)
 ):
     """设备端在线播放插件音乐"""
     try:
