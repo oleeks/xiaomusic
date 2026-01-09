@@ -25,11 +25,11 @@ from fastapi.responses import (
 )
 from starlette.background import BackgroundTask
 
-from xiaomusic.api.dependencies import (
+from xiaomusic.server.dependencies import (
     access_key_verification,
     require_auth, current_xiaomusic, current_config, current_logger,
 )
-from xiaomusic.api.models import (
+from xiaomusic.server.models import (
     DownloadOneMusic,
     DownloadPlayList,
     UrlInfo,

@@ -1,6 +1,6 @@
 """API 模块统一入口"""
 
-from xiaomusic.api.app import (
+from xiaomusic.server.app import (
     http_init,
     app,
 )

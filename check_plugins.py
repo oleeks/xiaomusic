@@ -8,7 +8,7 @@ import sys
 sys.path.append(".")
 
 from xiaomusic.config import Config
-from xiaomusic.js_plugin_manager import JSPluginManager
+from xiaomusic.core.js_plugin_manager import JSPluginManager
 
 
 def check_all_plugins():

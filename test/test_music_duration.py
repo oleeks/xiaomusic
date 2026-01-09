@@ -1,6 +1,6 @@
 import math
 
-from xiaomusic.const import (
+from xiaomusic.utils.const import (
     SUPPORT_MUSIC_TYPE,
 )
 from xiaomusic.utils import (

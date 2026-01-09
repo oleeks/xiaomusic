@@ -10,7 +10,7 @@ from dataclasses import (
 )
 from typing import get_type_hints
 
-from xiaomusic.const import (
+from xiaomusic.utils.const import (
     PLAY_TYPE_ALL,
     PLAY_TYPE_ONE,
     PLAY_TYPE_RND,

@@ -13,7 +13,7 @@ from fastapi import (
     UploadFile,
 )
 
-from xiaomusic.api.dependencies import require_auth, current_xiaomusic, current_js_plugin_manager
+from xiaomusic.server.dependencies import require_auth, current_xiaomusic, current_js_plugin_manager
 
 router = APIRouter(dependencies=[Depends(require_auth)])
 

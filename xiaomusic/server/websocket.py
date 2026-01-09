@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 import jwt
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 
-from xiaomusic.api.dependencies import (
+from xiaomusic.server.dependencies import (
     current_config,
     verification,
     ws_secret, current_xiaomusic, current_logger,

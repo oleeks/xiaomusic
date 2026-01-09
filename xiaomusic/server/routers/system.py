@@ -24,7 +24,7 @@ from starlette.background import (
 )
 
 from xiaomusic import __version__
-from xiaomusic.api.dependencies import (
+from xiaomusic.server.dependencies import (
     current_config,
     current_logger,
     current_xiaomusic,

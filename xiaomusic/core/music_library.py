@@ -13,7 +13,7 @@ import urllib.parse
 from collections import OrderedDict
 from dataclasses import asdict
 
-from xiaomusic.const import SUPPORT_MUSIC_TYPE
+from xiaomusic.utils.const import SUPPORT_MUSIC_TYPE
 from xiaomusic.utils import (
     custom_sort_key,
     extract_audio_metadata,

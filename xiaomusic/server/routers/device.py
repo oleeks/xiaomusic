@@ -6,12 +6,12 @@ from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends
 
-from xiaomusic.api.dependencies import (
+from xiaomusic.server.dependencies import (
     device_guard,
     require_auth,
     current_xiaomusic,
 )
-from xiaomusic.api.models import DidCmd, DidVolume
+from xiaomusic.server.models import DidCmd, DidVolume
 if TYPE_CHECKING:
     from xiaomusic.xiaomusic import XiaoMusic
 router = APIRouter(dependencies=[Depends(require_auth)])

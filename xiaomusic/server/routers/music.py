@@ -5,13 +5,13 @@ import urllib.parse
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
-from xiaomusic.api.dependencies import (
+from xiaomusic.server.dependencies import (
     device_guard,
     require_auth,
     current_xiaomusic,
     current_logger
 )
-from xiaomusic.api.models import DidPlayMusic, MusicInfo, MusicItem
+from xiaomusic.server.models import DidPlayMusic, MusicInfo, MusicItem
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

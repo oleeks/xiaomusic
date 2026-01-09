@@ -45,7 +45,7 @@ class JSPluginManager:
 
     def _start_node_process(self):
         """启动 Node.js 子进程"""
-        runner_path = os.path.join(os.path.dirname(__file__), "js_plugin_runner.js")
+        runner_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "js_plugin_runner.js")
 
         try:
             self.node_process = subprocess.Popen(
@@ -117,7 +117,7 @@ class JSPluginManager:
         threading.Thread(target=stderr_handler, daemon=True).start()
 
     def _send_message(
-        self, message: dict[str, Any], timeout: int = 30
+            self, message: dict[str, Any], timeout: int = 30
     ) -> dict[str, Any]:
         """发送消息到 Node.js 子进程"""
         with self._lock:
@@ -292,7 +292,7 @@ class JSPluginManager:
         if not os.path.exists(self.plugins_config_path):
             # 复制 plugins-config-example.json 模板，创建插件配置Json文件
             example_config_path = os.path.join(
-                os.path.dirname(__file__), "plugins-config-example.json"
+                os.path.dirname(os.path.dirname(__file__)), "data", "plugins-config-example.json"
             )
             if os.path.exists(example_config_path):
                 shutil.copy2(example_config_path, self.plugins_config_path)
@@ -510,7 +510,7 @@ class JSPluginManager:
             # 使用aiohttp发起异步HTTP GET请求
             async with aiohttp.ClientSession() as session:
                 async with session.get(
-                    url, params=params, timeout=aiohttp.ClientTimeout(total=10)
+                        url, params=params, timeout=aiohttp.ClientTimeout(total=10)
                 ) as response:
                     response.raise_for_status()  # 抛出HTTP错误
                     # 解析响应数据
@@ -587,11 +587,11 @@ class JSPluginManager:
             }
 
     def optimize_search_results(
-        self,
-        result_data: dict[str, Any],  # 搜索结果数据，字典类型，包含任意类型的值
-        search_keyword: str = "",  # 搜索关键词，默认为空字符串
-        search_artist: str = "",  # 搜索歌手名，默认为空字符串
-        limit: int = 1,  # 返回结果数量限制，默认为1
+            self,
+            result_data: dict[str, Any],  # 搜索结果数据，字典类型，包含任意类型的值
+            search_keyword: str = "",  # 搜索关键词，默认为空字符串
+            search_artist: str = "",  # 搜索歌手名，默认为空字符串
+            limit: int = 1,  # 返回结果数量限制，默认为1
     ) -> dict[str, Any]:  # 返回优化后的搜索结果，字典类型，包含任意类型的值
         """
         优化搜索结果，根据关键词、歌手名和平台权重对结果进行排序
@@ -742,7 +742,7 @@ class JSPluginManager:
         return response["result"]
 
     def get_album_info(
-        self, plugin_name: str, album_info: dict[str, Any], page: int = 1
+            self, plugin_name: str, album_info: dict[str, Any], page: int = 1
     ):
         """获取专辑详情"""
         if plugin_name not in self.plugins:
@@ -768,7 +768,7 @@ class JSPluginManager:
         return response["result"]
 
     def get_music_sheet_info(
-        self, plugin_name: str, playlist_info: dict[str, Any], page: int = 1
+            self, plugin_name: str, playlist_info: dict[str, Any], page: int = 1
     ):
         """获取歌单详情"""
         if plugin_name not in self.plugins:
@@ -794,11 +794,11 @@ class JSPluginManager:
         return response["result"]
 
     def get_artist_works(
-        self,
-        plugin_name: str,
-        artist_item: dict[str, Any],
-        page: int = 1,
-        type_: str = "music",
+            self,
+            plugin_name: str,
+            artist_item: dict[str, Any],
+            page: int = 1,
+            type_: str = "music",
     ):
         """获取作者作品"""
         if plugin_name not in self.plugins:
@@ -892,7 +892,7 @@ class JSPluginManager:
         return response["result"]
 
     def get_top_list_detail(
-        self, plugin_name: str, top_list_item: dict[str, Any], page: int = 1
+            self, plugin_name: str, top_list_item: dict[str, Any], page: int = 1
     ):
         """获取榜单详情"""
         if plugin_name not in self.plugins:
@@ -1033,8 +1033,8 @@ class JSPluginManager:
 
                     # 从enabled_plugins中移除插件（如果存在）
                     if (
-                        "enabled_plugins" in config_data
-                        and plugin_name in config_data["enabled_plugins"]
+                            "enabled_plugins" in config_data
+                            and plugin_name in config_data["enabled_plugins"]
                     ):
                         config_data["enabled_plugins"].remove(plugin_name)
 

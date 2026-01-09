@@ -13,7 +13,7 @@ from watchdog.events import (
 )
 from watchdog.observers import Observer
 
-from xiaomusic.const import SUPPORT_MUSIC_TYPE
+from xiaomusic.utils.const import SUPPORT_MUSIC_TYPE
 
 
 class XiaoMusicPathWatch(FileSystemEventHandler):

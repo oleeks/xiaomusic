@@ -43,7 +43,7 @@ from mutagen.wave import WAVE
 from mutagen.wavpack import WavPack
 from PIL import Image
 
-from xiaomusic.const import SUPPORT_MUSIC_TYPE
+from xiaomusic.utils.const import SUPPORT_MUSIC_TYPE
 
 log = logging.getLogger(__package__)
 

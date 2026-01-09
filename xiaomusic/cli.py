@@ -20,7 +20,6 @@ LOGO = r"""
           {}
 """
 
-
 sentry_sdk.init(
     dsn="https://ffe4962642d04b29afe62ebd1a065231@glitchtip.hanxi.cc/1",
     integrations=[
@@ -37,10 +36,10 @@ ignore_logger("miservice")
 
 def main():
     from xiaomusic import __version__
-    from xiaomusic.api import (
+    from xiaomusic.server import (
         http_init,
     )
-    from xiaomusic.api import (
+    from xiaomusic.server import (
         app as HttpApp,
     )
     from xiaomusic.config import Config

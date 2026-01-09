@@ -1,21 +1,18 @@
 #!/usr/bin/env python3
 import asyncio
-import logging
 import os
 import re
-from logging.handlers import RotatingFileHandler
 
 from aiohttp import ClientSession
 
-from xiaomusic import __version__
-from xiaomusic.analytics import Analytics
-from xiaomusic.auth import AuthManager
-from xiaomusic.command_handler import CommandHandler
+from xiaomusic.core.analytics import Analytics
+from xiaomusic.core.auth import AuthManager
+from xiaomusic.core.command_handler import CommandHandler
 from xiaomusic.config import (
     Config,
 )
-from xiaomusic.config_manager import ConfigManager
-from xiaomusic.const import (
+from xiaomusic.core.config_manager import ConfigManager
+from xiaomusic.utils.const import (
     GET_ASK_BY_MINA,
     LATEST_ASK_API,
     PLAY_TYPE_ALL,
@@ -24,15 +21,15 @@ from xiaomusic.const import (
     PLAY_TYPE_SEQ,
     PLAY_TYPE_SIN,
 )
-from xiaomusic.conversation import ConversationPoller
-from xiaomusic.crontab import Crontab
-from xiaomusic.device_manager import DeviceManager
-from xiaomusic.device_player import XiaoMusicDevice
-from xiaomusic.file_watcher import FileWatcherManager
-from xiaomusic.music_library import MusicLibrary
-from xiaomusic.music_url import MusicUrlHandler
-from xiaomusic.online_music import OnlineMusicService
-from xiaomusic.plugin import PluginManager
+from xiaomusic.core.conversation import ConversationPoller
+from xiaomusic.core.crontab import Crontab
+from xiaomusic.core.device_manager import DeviceManager
+from xiaomusic.core.device_player import XiaoMusicDevice
+from xiaomusic.core.file_watcher import FileWatcherManager
+from xiaomusic.core.music_library import MusicLibrary
+from xiaomusic.core.music_url import MusicUrlHandler
+from xiaomusic.core.online_music import OnlineMusicService
+from xiaomusic.core.plugin import PluginManager
 from xiaomusic.utils import (
     MusicUrlCache,
     chinese_to_number,
@@ -92,7 +89,7 @@ class XiaoMusic:
 
         # 初始化 JS 插件管理器
         try:
-            from xiaomusic.js_plugin_manager import JSPluginManager
+            from xiaomusic.core.js_plugin_manager import JSPluginManager
 
             self.js_plugin_manager = JSPluginManager(self)
             self.log.info("JS Plugin Manager initialized successfully")
@@ -102,7 +99,7 @@ class XiaoMusic:
 
         # 初始化 JS 插件适配器
         try:
-            from xiaomusic.js_adapter import JSAdapter
+            from xiaomusic.core.js_adapter import JSAdapter
 
             self.js_adapter = JSAdapter(self)
             self.log.info("JS Adapter initialized successfully")
@@ -116,7 +113,7 @@ class XiaoMusic:
         )
 
         # 尝试从设置里加载配置
-        config_data = self._config_manager.try_init_setting()
+        config_data = self._config_manager.init_setting()
         if config_data:
             self.update_config_from_setting(config_data)
 
@@ -900,7 +897,7 @@ class XiaoMusic:
     # 把当前配置落地
     def save_cur_config(self):
         """把当前配置落地（委托给 config_manager）"""
-        self._config_manager.save_cur_config(self.devices)
+        self._config_manager.save_config(self.devices)
 
     def update_config_from_setting(self, data):
         """从设置更新配置"""

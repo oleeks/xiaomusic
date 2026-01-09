@@ -17,7 +17,7 @@ from miservice import (
 )
 
 from xiaomusic.config import Device
-from xiaomusic.const import COOKIE_TEMPLATE
+from xiaomusic.utils.const import COOKIE_TEMPLATE
 from xiaomusic.utils import parse_cookie_string
 
 

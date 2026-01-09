@@ -13,7 +13,7 @@ import time
 from miservice import miio_command
 
 from xiaomusic.config import Device
-from xiaomusic.const import (
+from xiaomusic.utils.const import (
     NEED_USE_PLAY_MUSIC_API,
     PLAY_TYPE_ALL,
     PLAY_TYPE_ONE,
@@ -330,7 +330,7 @@ class XiaoMusicDevice:
         self._duration = sec
         self._paused_time = 0
         await self.set_next_music_timeout(sec)
-        self.xiaomusic.save_cur_config()
+        self.xiaomusic.save_config()
 
     async def do_tts(self, value):
         """执行TTS（文字转语音）"""
@@ -693,7 +693,7 @@ class XiaoMusicDevice:
     async def set_play_type(self, play_type, dotts=True):
         """设置播放类型"""
         self.device.play_type = play_type
-        self.xiaomusic.save_cur_config()
+        self.xiaomusic.save_config()
         if dotts:
             tts = self.config.get_play_type_tts(play_type)
             await self.do_tts(tts)

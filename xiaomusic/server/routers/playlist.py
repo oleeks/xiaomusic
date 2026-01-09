@@ -2,12 +2,12 @@
 
 from fastapi import APIRouter, Depends
 
-from xiaomusic.api.dependencies import (
+from xiaomusic.server.dependencies import (
     device_guard,
     require_auth,
     current_xiaomusic,
 )
-from xiaomusic.api.models import (
+from xiaomusic.server.models import (
     DidPlayMusicList,
     PlayListMusic,
     PlayList,

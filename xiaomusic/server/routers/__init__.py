@@ -1,7 +1,7 @@
 """路由注册"""
 
-from xiaomusic.api import websocket
-from xiaomusic.api.routers import (
+from xiaomusic.server import websocket
+from xiaomusic.server.routers import (
     device,
     file,
     music,

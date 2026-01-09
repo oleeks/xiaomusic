@@ -8,15 +8,15 @@ from typing import TYPE_CHECKING
 from fastapi import FastAPI
 
 from xiaomusic import __version__
-from xiaomusic.api.dependencies import (
+from xiaomusic.server.dependencies import (
     AuthStaticFiles,
     reset_http_server,
     setup_state,
     current_xiaomusic,
     current_logger,
 )
-from xiaomusic.api.middleware import add_middleware
-from xiaomusic.api.routers import register_routers
+from xiaomusic.server.middleware import add_middleware
+from xiaomusic.server.routers import register_routers
 
 if TYPE_CHECKING:
     from xiaomusic.xiaomusic import XiaoMusic
