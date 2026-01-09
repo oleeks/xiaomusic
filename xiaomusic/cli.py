@@ -5,6 +5,7 @@ import logging
 import signal
 
 import sentry_sdk
+import uvicorn
 from sentry_sdk.integrations.asyncio import AsyncioIntegration
 from sentry_sdk.integrations.logging import (
     LoggingIntegration,
@@ -180,44 +181,27 @@ def main():
     except Exception as e:
         print(f"Execption {e}")
 
-    import asyncio
-
-    from uvicorn import (
-        Config as UvicornConfig,
-    )
-    from uvicorn import (
-        Server,
-    )
+    # import asyncio
+    #
+    # from uvicorn import (
+    #     Config as UvicornConfig,
+    # )
+    # from uvicorn import (
+    #     Server,
+    # )
 
     xiaomusic = XiaoMusic(config)
     http_init(xiaomusic)
     port = int(config.port)
 
     # 创建 uvicorn 配置，禁用其信号处理
-    uvicorn_config = UvicornConfig(
+    uvicorn.run(
         HttpApp,
         host="0.0.0.0",
         port=port,
         log_config=LOGGING_CONFIG,
+        workers=1
     )
-    server = Server(uvicorn_config)
-
-    # 自定义信号处理
-    shutdown_initiated = False
-
-    def handle_exit(signum, frame):
-        nonlocal shutdown_initiated
-        if not shutdown_initiated:
-            shutdown_initiated = True
-            print("\n正在关闭服务器...")
-            server.should_exit = True
-
-    signal.signal(signal.SIGINT, handle_exit)
-    signal.signal(signal.SIGTERM, handle_exit)
-
-    # 运行服务器
-    asyncio.run(server.serve())
-
 
 if __name__ == "__main__":
     main()
